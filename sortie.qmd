@@ -1,0 +1,167 @@
+---
+title: "Stats"
+format: html
+---
+
+# Codage
+
+## Codage des variables
+id 1 à 21
+
+age NA
+
+sexe h f
+
+time 1 ou 2
+
+*flow9_1* : codage de 1 à 5 toujours de gauche à droite ! code optimal c'est 3  qui vaut 5 points. 2 et 4 valent 3 points et 1 et 5 valent 1 point.
+
+flow9_2 : codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+*flow9_3* : codage de 1 à 5 toujours de gauche à droite ! 1 vaut 1 point, 2 vaut 2 points, 3 vaut 3 points, 4 vaut 4 points, 5 vaut 5 points.
+
+flow9_4 : codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+flow9_5 : codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+flow9_6 : codage de 1 à 5 toujours de gauche à droite ! codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+flow9_7 : codage de 1 à 5 toujours de gauche à droite ! codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+flow9_8 : codage de 1 à 5 toujours de gauche à droite ! codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+flow9_9 : codage de 1 à 5 toujours de gauche à droite ! codage de 1 à 5 toujours de gauche à droite ! 1 vaut 5 points, 2 vaut 4 points, 3 vaut 3 points, 4 vaut 2 points, 5 vaut 1 point.
+
+
+```{r}
+# Chargement des packages
+
+library(tidyverse)
+library(readxl)
+library(here)
+
+# Chargement des données
+
+d <- read_excel(here("data","data.xlsx"))
+
+
+
+# transformation de time en facteur avec catégorie 1 ou 2
+
+d <- d %>%
+    mutate(time = factor(time, levels = c(1, 2), labels = c("Temps 1", "Temps 2")))
+# transformation de sexe en facteur avec catégorie h pour garçon et f pour fille
+
+d <- d %>%
+    mutate(sexe = factor(sexe, levels = c("h", "f"), labels = c("garçon", "fille")))
+
+# Codage de la variable flow9_1: 1 vaut 1, 2 vaut 3, 3 vaut 5, 4 vaut 3, 5 vaut 1.
+
+d <- d %>%
+    mutate(flow9_1 = case_when(flow9_1 == 1 ~ 1,
+                               flow9_1 == 2 ~ 3,
+                               flow9_1 == 3 ~ 5,
+                               flow9_1 == 4 ~ 3,
+                               flow9_1 == 5 ~ 1))
+
+# Codage de la variable flow9_3: 1 vaut 1, 2 vaut 2, 3 vaut 3, 4 vaut 4, 5 vaut 5.
+
+d <- d %>%
+    mutate(flow9_3 = case_when(flow9_3 == 1 ~ 1,
+                               flow9_3 == 2 ~ 2,
+                               flow9_3 == 3 ~ 3,
+                               flow9_3 == 4 ~ 4,
+                               flow9_3 == 5 ~ 5))
+
+# codage des variables flow9_2, flow9_4:flow9_9: 1 vaut 5, 2 vaut 4, 3 vaut 3, 2 vaut 2, 1 vaut 1.
+
+d <- d %>%
+    mutate(across(c(flow9_2, flow9_4:flow9_9), ~ case_when(. == 1 ~ 5,
+                                                           . == 2 ~ 4,
+                                                           . == 3 ~ 3,
+                                                           . == 4 ~ 2,
+                                                           . == 5 ~ 1)))
+
+# Affichage des données
+
+str(d)
+
+# création de la variable flow9_score qui est la moyenne de flow9_1:flow9_9
+
+d <- d %>%
+    mutate(flow9_score = rowMeans(select(., flow9_1:flow9_9), na.rm = TRUE))
+
+
+
+```
+
+# Préparation du résumé
+
+```{r}
+# moyenne et écart-type de flow9_score par temps 
+
+d_sum <- d %>%
+    group_by(time) %>%
+    summarise(mean = mean(flow9_score, na.rm = TRUE),
+              sd = sd(flow9_score, na.rm = TRUE))
+
+# affichage du résumé avec gt()
+
+
+library(gt)
+
+# mise en forme avec affichage des moyennes et écart-types par time
+
+d_gt <- d_sum %>%
+    gt() %>%
+    tab_header(title = md("**Moyennes et écart-types de flow9_score par temps**")) %>%
+    cols_label(time = "Temps",
+               mean = "Moyenne",
+               sd = "Ecart-type")
+
+
+# affichage de d_gt en html
+
+d_gt
+
+
+```
+
+# Préparation du graphique
+
+```{r}
+
+# représentation graphique de flow9_score par temps avec geom_boxplot et geom_jitter
+# suppression de l'affichage des outliers dans geom_boxplot
+
+d %>%
+    ggplot(aes(x = time, y = flow9_score)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(width = 0.1, alpha = 0.5) +
+    labs(x = "Temps", y = "Score de flow9") +
+    theme_bw()
+
+
+```
+
+# Préparation de l'analyse de variance
+
+```{r}
+
+# repérage des observation qui ont NA à flow9_score.
+
+to_remove <- d %>%
+    filter(is.na(flow9_score)) %>%
+    select(id)
+
+# suppression des id qui ont au moins une observation contenant NA à flow9_score
+
+d_test <- d %>%
+    filter(!id %in% to_remove$id)
+
+# analyse de variance de flow9_score par temps
+
+t.test(flow9_score ~ time, data = d_test)
+
+```
+
