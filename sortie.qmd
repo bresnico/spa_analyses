@@ -165,3 +165,49 @@ t.test(flow9_score ~ time, data = d_test)
 
 ```
 
+# Résultats supplémentaires
+
+```{r}
+
+# tableau de comparaison de chaque variable flow9_1:flow9_9 par temps
+
+d %>%
+    group_by(time) %>%
+    summarise(across(c(flow9_1:flow9_9), ~ mean(.x, na.rm = TRUE))) %>%
+    gt() %>%
+    tab_header(title = md("**Moyennes de flow9_1:flow9_9 par temps**")) %>%
+    cols_label(time = "Temps",
+               flow9_1 = "flow9_1",
+               flow9_2 = "flow9_2",
+               flow9_3 = "flow9_3",
+               flow9_4 = "flow9_4",
+               flow9_5 = "flow9_5",
+               flow9_6 = "flow9_6",
+               flow9_7 = "flow9_7",
+               flow9_8 = "flow9_8",
+               flow9_9 = "flow9_9")
+```
+
+# Résultats supplémentaires
+
+
+```{r}
+
+# Comparaison de flow9_score pour chaque enfant à chaque temps dans un tableau
+
+d %>%
+    pivot_longer(cols = c(flow9_score, flow9_1:flow9_9),
+                 names_to = "flow9",
+                 values_to = "score") %>%
+    group_by(id, time) %>%
+    summarise(score = mean(score, na.rm = TRUE)) %>%
+    pivot_wider(names_from = time,
+                values_from = score) %>%
+    gt() %>%
+    tab_header(title = md("**Moyennes de flow9_score par temps**")) %>%
+    cols_label(id = "id",
+               `Temps 1` = "Temps 1",
+               `Temps 2` = "Temps 2")
+
+```
+
